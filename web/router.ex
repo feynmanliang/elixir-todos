@@ -21,7 +21,7 @@ defmodule Todos.Router do
     pipe_through [:api, :authenticated]
 
     resources "/todos", TodoController, except: [:new, :edit]
-    resources "/users", UserController, except: [:new, :create, :edit]
+    resources "/users", UserController, except: [:new, :create, :edit, :delete]
   end
 
   defp ensure_jwt(conn, _params) do

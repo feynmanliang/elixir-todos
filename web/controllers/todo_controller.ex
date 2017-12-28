@@ -11,8 +11,8 @@ defmodule Todos.TodoController do
     render(conn, "index.json", todos: todos)
   end
 
-  def create(conn, %{"todo" => todo_params}) do
-    with {:ok, %Todo{} = todo} <- TaskManagement.create_todo(todo_params) do
+  def create(%{assigns: %{user: user}} = conn, %{"todo" => todo_params}) do
+    with {:ok, %Todo{} = todo} <- TaskManagement.create_todo(user, todo_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", todo_path(conn, :show, todo))

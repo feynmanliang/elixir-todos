@@ -1,15 +1,17 @@
 defmodule Todos.TodoControllerTest do
   use Todos.ConnCase
 
+  alias Todos.Accounts
   alias Todos.TaskManagement
   alias Todos.TaskManagement.Todo
 
-  @create_attrs %{description: "some description", title: "some title"}
+  @create_user_attrs %{email: "some email", name: "some name", password: "some password"}
+  @create_todo_attrs %{description: "some description", title: "some title"}
   @update_attrs %{description: "some updated description", title: "some updated title"}
   @invalid_attrs %{description: nil, title: nil}
 
   def fixture(:todo, owner) do
-    {:ok, todo} = TaskManagement.create_todo(owner, @create_attrs)
+    {:ok, todo} = TaskManagement.create_todo(owner, @create_todo_attrs)
     todo
   end
 
@@ -18,8 +20,12 @@ defmodule Todos.TodoControllerTest do
   end
 
   describe "index" do
-    test "lists all todos", %{conn: conn} do
-      conn = get conn, todo_path(conn, :index)
+    setup [:create_user]
+
+    test "lists all todos", %{conn: conn, jwt: jwt} do
+      conn = conn
+             |> put_req_header("bearer", jwt)
+             |> get(todo_path(conn, :index))
       assert json_response(conn, 200)["data"] == []
     end
   end
@@ -27,69 +33,84 @@ defmodule Todos.TodoControllerTest do
   describe "create todo" do
     setup [:create_user]
 
-    test "renders todo when data is valid", %{conn: conn} do
-      conn = post conn, todo_path(conn, :create), todo: @create_attrs
+    test "renders todo when data is valid", %{conn: conn, jwt: jwt} do
+      conn = conn
+             |> put_req_header("bearer", jwt)
+             |> post(todo_path(conn, :create), todo: @create_todo_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get conn, todo_path(conn, :show, id)
+      conn = build_conn()
+             |> put_req_header("bearer", jwt)
+             |> get(todo_path(conn, :show, id))
       assert json_response(conn, 200)["data"] == %{
         "id" => id,
         "description" => "some description",
         "title" => "some title"}
     end
 
-    test "renders errors when no owner is provided", %{conn: conn} do
+    test "renders errors when not authenticated", %{conn: conn} do
       conn = post conn, todo_path(conn, :create), todo: @invalid_attrs
-      # TODO: is this the correct error
-      assert json_response(conn, 422)["errors"] != %{}
+      assert response(conn, 401)
     end
 
-    test "renders errors when data is invalid", %{conn: conn} do
-      conn = post conn, todo_path(conn, :create), todo: @invalid_attrs
+    test "renders errors when data is invalid", %{conn: conn, jwt: jwt} do
+      conn = conn
+             |> put_req_header("bearer", jwt)
+             |> post(todo_path(conn, :create), todo: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
   describe "update todo" do
-    setup [:create_todo]
+    setup [:create_user, :create_todo]
 
-    test "renders todo when data is valid", %{conn: conn, todo: %Todo{id: id} = todo} do
-      conn = put conn, todo_path(conn, :update, todo), todo: @update_attrs
+    test "renders todo when data is valid", %{conn: conn, todo: %Todo{id: id} = todo, jwt: jwt} do
+      conn = conn
+             |> put_req_header("bearer", jwt)
+             |> put(todo_path(conn, :update, todo), todo: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get conn, todo_path(conn, :show, id)
+      conn = build_conn()
+             |> put_req_header("bearer", jwt)
+             |> get(todo_path(conn, :show, id))
       assert json_response(conn, 200)["data"] == %{
         "id" => id,
         "description" => "some updated description",
         "title" => "some updated title"}
     end
 
-    test "renders errors when data is invalid", %{conn: conn, todo: todo} do
-      conn = put conn, todo_path(conn, :update, todo), todo: @invalid_attrs
+    test "renders errors when data is invalid", %{conn: conn, todo: todo, jwt: jwt} do
+      conn = conn
+             |> put_req_header("bearer", jwt)
+             |> put(todo_path(conn, :update, todo), todo: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
   describe "delete todo" do
-    setup [:create_todo]
+    setup [:create_user, :create_todo]
 
-    test "deletes chosen todo", %{conn: conn, todo: todo} do
-      conn = delete conn, todo_path(conn, :delete, todo)
+    test "deletes chosen todo", %{conn: conn, todo: todo, jwt: jwt} do
+      conn = conn
+             |> put_req_header("bearer", jwt)
+             |> delete(todo_path(conn, :delete, todo))
       assert response(conn, 204)
       assert_error_sent 404, fn ->
-        get conn, todo_path(conn, :show, todo)
+        build_conn()
+        |> put_req_header("bearer", jwt)
+        |> get(todo_path(conn, :show, todo))
       end
     end
   end
 
-  defp create_todo(_) do
-    owner = Todos.UserControllerTest.fixture(:user)
-    todo = fixture(:todo, owner)
+  defp create_todo(context) do
+    todo = fixture(:todo, context.user)
     {:ok, todo: todo}
   end
 
   defp create_user(_) do
-    user = Todos.UserControllerTest.fixture(:user)
-    {:ok, user: user}
+    {:ok, user} = Accounts.create_user(@create_user_attrs)
+    {:ok, jwt, _} = Todos.Guardian.encode_and_sign(user)
+    {:ok, user: user, jwt: jwt}
   end
 end
