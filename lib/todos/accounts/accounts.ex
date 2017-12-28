@@ -92,7 +92,7 @@ defmodule Todos.Accounts do
   def login(%{"email" => email, "password" => password}) do
     user = User
            |> Repo.get_by(email: email)
-    if user.password == password do
+    if user != nil and user.password == password do
       {:ok, user}
     else
       {:error, "Invalid credentials"}

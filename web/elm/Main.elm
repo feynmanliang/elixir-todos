@@ -3,19 +3,25 @@ module Main exposing (..)
 import Html exposing (text, Html, div)
 import Html.Attributes exposing (class)
 import Components.TodoList as TodoList
+import Components.LoginForm as LoginForm
 
 
 type alias Model =
-    { todoListModel : TodoList.Model }
+    { todoListModel : TodoList.Model
+    , loginFormModel : LoginForm.Model
+    }
 
 
 type Msg
     = TodoListMsg TodoList.Msg
+    | LoginFormMsg LoginForm.Msg
 
 
 initialModel : Model
 initialModel =
-    { todoListModel = TodoList.initialModel }
+    { todoListModel = TodoList.initialModel
+    , loginFormModel = LoginForm.initialModel
+    }
 
 
 init : ( Model, Cmd Msg )
@@ -33,6 +39,13 @@ update msg model =
             in
                 ( { model | todoListModel = updatedModel }, Cmd.map TodoListMsg cmd )
 
+        LoginFormMsg loginMsg ->
+            let
+                ( updatedModel, cmd ) =
+                    LoginForm.update loginMsg model.loginFormModel
+            in
+                ( { model | loginFormModel = updatedModel }, Cmd.map LoginFormMsg cmd )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -42,7 +55,9 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div [ class "elm-app" ]
-        [ Html.map TodoListMsg (TodoList.view model.todoListModel) ]
+        [ Html.map TodoListMsg (TodoList.view model.todoListModel)
+        , Html.map LoginFormMsg (LoginForm.view model.loginFormModel)
+        ]
 
 
 main : Program Never Model Msg

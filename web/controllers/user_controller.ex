@@ -37,7 +37,7 @@ defmodule Todos.UserController do
   def login(conn, _params) do
     with {:ok, user} <- Accounts.login(conn.body_params),
          {:ok, token, _} <- Guardian.encode_and_sign(user) do
-           send_resp(conn, :ok, token)
+           render(conn, "access_token.json", token: token)
     end
   end
 end

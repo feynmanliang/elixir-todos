@@ -15,4 +15,8 @@ defmodule Todos.UserView do
       name: user.name,
       email: user.email}
   end
+
+  def render("access_token.json", %{token: token}) do
+    %{access_token: token}
+  end
 end
