@@ -3,6 +3,7 @@ defmodule Todos.UserController do
 
   alias Todos.Accounts
   alias Todos.Accounts.User
+  alias Todos.Guardian
 
   action_fallback Todos.FallbackController
 
@@ -37,6 +38,13 @@ defmodule Todos.UserController do
     user = Accounts.get_user!(id)
     with {:ok, %User{}} <- Accounts.delete_user(user) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  def login(conn, _params) do
+    with {:ok, user} <- Accounts.login(conn.body_params),
+         {:ok, token, _} <- Guardian.encode_and_sign(user) do
+           send_resp(conn, :ok, token)
     end
   end
 end

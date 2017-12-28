@@ -17,4 +17,8 @@ defmodule Todos.FallbackController do
     |> put_status(:not_found)
     |> render(Todos.ErrorView, :"404")
   end
+
+  def call(conn, {:error, err}) do
+    send_resp(conn, :internal_server_error, err)
+  end
 end

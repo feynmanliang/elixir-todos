@@ -22,6 +22,10 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+config :todos, Todos.Guardian,
+  issuer: "Todos",
+  secret_key: "1gdHcHWV5Xfxxso0Ap6LAEJPK1vsrWIKF3IUzLvNG23+G5hYokB3HHg0KziwZJLL"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"

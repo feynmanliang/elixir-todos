@@ -104,4 +104,14 @@ defmodule Todos.Accounts do
   def change_user(%User{} = user) do
     User.changeset(user, %{})
   end
+
+  def login(%{"email" => email, "password" => password}) do
+    user = User
+           |> Repo.get_by(email: email)
+    if user.password == password do
+      {:ok, user}
+    else
+      {:error, "Invalid credentials"}
+    end
+  end
 end

@@ -8,6 +8,7 @@ defmodule Todos.Accounts.User do
   schema "users" do
     field :email, :string
     field :name, :string
+    field :password, :string
     has_many :todos, Todo, foreign_key: :owner_id
 
     timestamps()
@@ -16,7 +17,7 @@ defmodule Todos.Accounts.User do
   @doc false
   def changeset(%User{} = user, attrs) do
     user
-    |> cast(attrs, [:name, :email])
-    |> validate_required([:name, :email])
+    |> cast(attrs, [:name, :email, :password])
+    |> validate_required([:name, :email, :password])
   end
 end
