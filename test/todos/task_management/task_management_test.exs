@@ -7,7 +7,7 @@ defmodule Todos.TaskManagementTest do
   describe "todos" do
     alias Todos.TaskManagement.Todo
 
-    @user_attrs %{email: "some email", name: "some name"}
+    @user_attrs %{email: "some email", name: "some name", password: "some password"}
     @valid_attrs %{description: "some description", title: "some title"}
     @update_attrs %{description: "some updated description", title: "some updated title"}
     @invalid_attrs %{description: nil, title: nil}

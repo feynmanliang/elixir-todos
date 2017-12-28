@@ -4,8 +4,8 @@ defmodule Todos.UserControllerTest do
   alias Todos.Accounts
   alias Todos.Accounts.User
 
-  @create_attrs %{email: "some email", name: "some name"}
-  @update_attrs %{email: "some updated email", name: "some updated name"}
+  @create_attrs %{email: "some email", name: "some name", password: "some password"}
+  @update_attrs %{email: "some updated email", name: "some updated name", password: "some updated password"}
   @invalid_attrs %{email: nil, name: nil}
 
   def fixture(:user) do
@@ -29,7 +29,13 @@ defmodule Todos.UserControllerTest do
       conn = post conn, user_path(conn, :create), user: @create_attrs
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get conn, user_path(conn, :show, id)
+      conn = post conn, user_path(conn, :login), email: @create_attrs.email, password: @create_attrs.password
+
+      jwt_token = response(conn, 200)
+
+      conn = build_conn()
+             |> put_req_header("bearer", jwt_token)
+             |> get(user_path(conn, :show, id))
       assert json_response(conn, 200)["data"] == %{
         "id" => id,
         "email" => "some email",

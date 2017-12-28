@@ -14,20 +14,21 @@ defmodule Todos.Router do
     pipe_through [:api]
     post "/login", UserController, :login
     put "/logout", UserController, :logout
+    post "/register", UserController, :create
   end
 
   scope "/api", Todos do
     pipe_through [:api, :authenticated]
 
     resources "/todos", TodoController, except: [:new, :edit]
-    resources "/users", UserController, except: [:new, :edit]
+    resources "/users", UserController, except: [:new, :create, :edit]
   end
 
   defp ensure_jwt(conn, _params) do
-    with {:ok, user, _claims} <- conn.req_headers
-      |> Enum.find(fn(element) -> match?({"bearer", _}, element) end)
-      |> elem(1)
-      |> Guardian.resource_from_token() do
+    with {:ok, user, _claims} <- conn
+    |> get_req_header("bearer")
+    |> Enum.at(0)
+    |> Guardian.resource_from_token() do
       assign(conn, :user, user)
     else
       _ ->
