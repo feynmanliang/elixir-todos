@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Html exposing (text, Html, div)
 import Html.Attributes exposing (class)
@@ -24,9 +24,14 @@ initialModel =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( initialModel, Cmd.none )
+init : Maybe Model -> ( Model, Cmd Msg )
+init model =
+    case model of
+        Just model ->
+            ( model, Cmd.none )
+
+        Nothing ->
+            ( initialModel, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -44,7 +49,7 @@ update msg model =
                 ( updatedModel, cmd ) =
                     LoginForm.update loginMsg model.loginFormModel
             in
-                ( { model | loginFormModel = updatedModel }, Cmd.map LoginFormMsg cmd )
+                ( { model | loginFormModel = updatedModel }, (Cmd.map LoginFormMsg cmd) )
 
 
 subscriptions : Model -> Sub Msg
@@ -60,11 +65,22 @@ view model =
         ]
 
 
-main : Program Never Model Msg
+main : Program (Maybe Model) Model Msg
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
         }
+
+
+setStorageHelper : Model -> ( Model, Cmd Msg )
+setStorageHelper model =
+    ( model, setStorage model )
+
+
+port setStorage : Model -> Cmd msg
+
+
+port removeStorage : Model -> Cmd msg

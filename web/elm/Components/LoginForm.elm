@@ -18,6 +18,7 @@ type alias Model =
 
 type Msg
     = ClickSubmit
+    | ClickLogout
     | SetEmail String
     | SetPassword String
     | GetTokenCompleted (Result Http.Error String)
@@ -69,6 +70,9 @@ update msg model =
         ClickSubmit ->
             ( model, submitLogin model )
 
+        ClickLogout ->
+            ( { model | jwt = "" }, Cmd.none )
+
         SetEmail email ->
             ( { model | email = email }, Cmd.none )
 
@@ -81,8 +85,19 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ input [ type_ "text", placeholder "Email", onInput SetEmail ] []
-        , input [ type_ "password", placeholder "Password", onInput SetPassword ] []
-        , button [ onClick ClickSubmit ] [ text "Submit" ]
-        ]
+    let
+        loggedIn : Bool
+        loggedIn =
+            if String.length model.jwt > 0 then
+                True
+            else
+                False
+    in
+        if loggedIn then
+            div [] [ button [ onClick ClickLogout ] [ text "Logout" ] ]
+        else
+            div []
+                [ input [ type_ "text", placeholder "Email", onInput SetEmail ] []
+                , input [ type_ "password", placeholder "Password", onInput SetPassword ] []
+                , button [ onClick ClickSubmit ] [ text "Submit" ]
+                ]

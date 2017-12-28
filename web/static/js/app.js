@@ -14,9 +14,22 @@
 import 'phoenix_html';
 import Elm from './main';
 
+
+
+// Render Elm application
 const elmDiv = document.querySelector('#elm-target');
 if (elmDiv) {
-  Elm.Main.embed(elmDiv);
+  // Load localStorage into Elm
+  const storedState = localStorage.getItem('model');
+  const startingState = storedState ? JSON.parse(storedState) : null;
+  const elmApp = Elm.Main.embed(elmDiv, startingState);
+
+  elmApp.ports.setStorage.subscribe((state) => {
+    localStorage.setItem('model', JSON.stringify(state));
+  });
+  elmApp.ports.removeStorage.subscribe(() => {
+    localStorage.removeItem('model');
+  });
 }
 
 // Import local files
