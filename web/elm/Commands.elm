@@ -26,20 +26,16 @@ decodeTodo =
             (field "created_at" (string |> andThen decodeDate))
 
 
-fetchTodosCmd : AccessToken -> List Todo -> Cmd TodoListMsg
-fetchTodosCmd token todoList =
+fetchTodosCmd : AccessToken -> Cmd TodoListMsg
+fetchTodosCmd token =
     let
-        decodeTodoFetch : Decoder (List Todo)
-        decodeTodoFetch =
-            at [ "data" ] (list decodeTodo)
-
         request : Http.Request (List Todo)
         request =
             { method = "GET"
             , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
             , body = Http.emptyBody
             , url = "/api/todos"
-            , expect = Http.expectJson decodeTodoFetch
+            , expect = Http.expectJson (at [ "data" ] (list decodeTodo))
             , timeout = Nothing
             , withCredentials = False
             }
@@ -94,7 +90,7 @@ createTodoCmd token addTodo =
                         |> encoder
                         |> Http.jsonBody
                 , url = "/api/todos"
-                , expect = Http.expectJson decodeTodo
+                , expect = Http.expectJson (at [ "data" ] decodeTodo)
                 , timeout = Nothing
                 , withCredentials = False
                 }

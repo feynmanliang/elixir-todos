@@ -24,7 +24,6 @@ renderTodoList todoList =
     in
         div [ class "todo-list" ]
             [ h2 [] [ text "Todo List" ]
-            , button [ onClick Fetch, class "btn btn-primary" ] [ text "Fetch Todos" ]
             , ul []
                 (List.map (\todo -> li [] [ renderTodo todo ]) sortedTodoList)
             ]
@@ -38,8 +37,20 @@ viewAddTodo login addTodo =
 
         Just _ ->
             div []
-                [ input [ type_ "text", placeholder "Title", onInput SetTitle ] []
-                , input [ type_ "text", placeholder "Description", onInput SetDescription ] []
+                [ input
+                    [ type_ "text"
+                    , placeholder "Title"
+                    , onInput SetTitle
+                    , value addTodo.title
+                    ]
+                    []
+                , input
+                    [ type_ "text"
+                    , placeholder "Description"
+                    , onInput SetDescription
+                    , value addTodo.description
+                    ]
+                    []
                 , button [ onClick ClickSubmitTodo ] [ text "Submit" ]
                 ]
 

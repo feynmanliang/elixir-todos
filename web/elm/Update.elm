@@ -23,14 +23,6 @@ updateTodoList msg maybeToken todoList =
         NoOp ->
             ( todoList, Cmd.none )
 
-        Fetch ->
-            case maybeToken of
-                Nothing ->
-                    ( todoList, Cmd.none )
-
-                Just token ->
-                    ( todoList, fetchTodosCmd token todoList )
-
         FetchCompleted result ->
             case result of
                 Ok newTodos ->
@@ -44,15 +36,15 @@ updateTodoList msg maybeToken todoList =
                 Ok newTodo ->
                     ( newTodo :: todoList, Cmd.none )
 
-                Err _ ->
+                Err err ->
                     ( todoList, Cmd.none )
 
 
-updateLogin : LoginMsg -> Login -> ( Login, Cmd LoginMsg )
+updateLogin : LoginMsg -> Login -> ( Login, Cmd Msg )
 updateLogin msg model =
     case msg of
         ClickSubmit ->
-            ( model, submitLoginCmd model )
+            ( model, (Cmd.map LoginMsg << submitLoginCmd) model )
 
         ClickLogout ->
             ( { model | accessToken = Nothing }, TokenStorage.remove () )
@@ -69,7 +61,12 @@ updateLogin msg model =
                     ( model, Cmd.none )
 
                 Ok token ->
-                    ( { model | accessToken = Just token }, TokenStorage.save token )
+                    ( { model | accessToken = Just token }
+                    , (Cmd.map TodoListMsg << Cmd.batch)
+                        [ TokenStorage.save token
+                        , fetchTodosCmd token
+                        ]
+                    )
 
         DoLoad ->
             ( model, TokenStorage.doload () )
@@ -80,7 +77,7 @@ updateLogin msg model =
                     ( model, Cmd.none )
 
                 Just token ->
-                    ( { model | accessToken = Just token }, Cmd.none )
+                    ( { model | accessToken = Just token }, Cmd.map TodoListMsg (fetchTodosCmd token) )
 
 
 updateAddTodo : Maybe AccessToken -> AddTodoMsg -> AddTodo -> ( AddTodo, Cmd Msg )
@@ -116,7 +113,7 @@ update msg model =
                 ( updatedModel, cmd ) =
                     updateLogin loginMsg model.login
             in
-                ( { model | login = updatedModel }, (Cmd.map LoginMsg cmd) )
+                ( { model | login = updatedModel }, cmd )
 
         AddTodoMsg addTodoMsg ->
             let
