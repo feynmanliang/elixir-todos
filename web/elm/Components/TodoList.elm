@@ -1,11 +1,11 @@
 module Components.TodoList exposing (..)
 
-import Debug
+import Date exposing (Date, fromString)
 import Html exposing (Html, text, ul, li, div, h2, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode exposing (Decoder, string, map3, field, at, list)
+import Json.Decode exposing (Decoder, string, map3, field, at, list, succeed, fail, andThen)
 import Todo
 
 
@@ -62,27 +62,32 @@ fetchTodos token todoList =
 
 fetchCompleted : List Todo.Model -> Result Http.Error (List Todo.Model) -> ( List Todo.Model, Cmd Msg )
 fetchCompleted todos result =
-    let
-        _ =
-            Debug.log "result" result
-    in
-        case result of
-            Ok newTodos ->
-                ( newTodos, Cmd.none )
+    case result of
+        Ok newTodos ->
+            ( newTodos, Cmd.none )
 
-            Err _ ->
-                ( todos, Cmd.none )
+        Err _ ->
+            ( todos, Cmd.none )
 
 
 decodeTodoFetch : Decoder (List Todo.Model)
 decodeTodoFetch =
     let
+        decodeDate : String -> Decoder Date
+        decodeDate dateString =
+            case (Date.fromString dateString) of
+                Ok date ->
+                    succeed date
+
+                Err err ->
+                    fail err
+
         decodeTodoData : Decoder Todo.Model
         decodeTodoData =
             map3 Todo.Model
                 (field "title" string)
                 (field "description" string)
-                (field "created_at" string)
+                (field "created_at" (string |> andThen decodeDate))
     in
         at [ "data" ] (list decodeTodoData)
 
