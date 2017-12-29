@@ -1,6 +1,6 @@
 module Components.TodoList exposing (..)
 
-import Date exposing (Date, fromString)
+import Date exposing (Date, fromString, toTime)
 import Html exposing (Html, text, ul, li, div, h2, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
@@ -104,9 +104,13 @@ renderTodos todoList =
 
 view : List Todo.Model -> Html Msg
 view todoList =
-    div [ class "todo-list" ]
-        [ h2 [] [ text "Todo List" ]
-        , button [ onClick Fetch, class "btn btn-primary" ] [ text "Fetch Todos" ]
-        , ul []
-            (renderTodos todoList)
-        ]
+    let
+        sortedTodoList =
+            List.sortBy (\todo -> todo.createdOn |> toTime) todoList
+    in
+        div [ class "todo-list" ]
+            [ h2 [] [ text "Todo List" ]
+            , button [ onClick Fetch, class "btn btn-primary" ] [ text "Fetch Todos" ]
+            , ul []
+                (renderTodos sortedTodoList)
+            ]
