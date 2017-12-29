@@ -3,6 +3,9 @@ module Components.TodoList exposing (..)
 import Html exposing (Html, text, ul, li, div, h2, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
+import Http
+import Task
+import Json.Decode exposing (Decoder, string, map4, field, at, list)
 import Todo
 
 
@@ -35,6 +38,7 @@ todos =
 type Msg
     = NoOp
     | Fetch
+    | FetchCompleted (Result Http.Error (List Todo.Model))
 
 
 initialModel : Model
@@ -49,7 +53,52 @@ update msg model =
             ( model, Cmd.none )
 
         Fetch ->
-            ( todos, Cmd.none )
+            ( model, fetchTodosCmd model )
+
+        FetchCompleted result ->
+            fetchCompleted model result
+
+
+fetchTodos : Model -> Http.Request (List Todo.Model)
+fetchTodos model =
+    { method = "GET"
+    , headers = [ Http.header "Authorization" ("Bearer " ++ "TODO INJECT TOKEN") ]
+    , body = Http.emptyBody
+    , url = "/api/todos"
+    , expect = Http.expectJson decodeTodoFetch
+    , timeout = Nothing
+    , withCredentials = False
+    }
+        |> Http.request
+
+
+fetchTodosCmd : Model -> Cmd Msg
+fetchTodosCmd model =
+    Http.send FetchCompleted (fetchTodos model)
+
+
+fetchCompleted : Model -> Result Http.Error (List Todo.Model) -> ( Model, Cmd Msg )
+fetchCompleted model result =
+    case result of
+        Ok newTodos ->
+            ( { model | todos = newTodos }, Cmd.none )
+
+        Err _ ->
+            ( model, Cmd.none )
+
+
+decodeTodoFetch : Decoder (List Todo.Model)
+decodeTodoFetch =
+    let
+        decodeTodoData : Decoder Todo.Model
+        decodeTodoData =
+            map4 Todo.Model
+                (field "title" string)
+                (field "description" string)
+                (field "owner_id" string)
+                (field "created_at" string)
+    in
+        list decodeTodoData
 
 
 renderTodo : Todo.Model -> Html a
