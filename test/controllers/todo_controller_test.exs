@@ -24,7 +24,7 @@ defmodule Todos.TodoControllerTest do
 
     test "lists all todos", %{conn: conn, jwt: jwt} do
       conn = conn
-             |> put_req_header("bearer", jwt)
+             |> put_req_header("authorization", "bearer #{jwt}")
              |> get(todo_path(conn, :index))
       assert json_response(conn, 200)["data"] == []
     end
@@ -35,17 +35,17 @@ defmodule Todos.TodoControllerTest do
 
     test "renders todo when data is valid", %{conn: conn, jwt: jwt} do
       conn = conn
-             |> put_req_header("bearer", jwt)
+             |> put_req_header("authorization", "bearer #{jwt}")
              |> post(todo_path(conn, :create), todo: @create_todo_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = build_conn()
-             |> put_req_header("bearer", jwt)
+             |> put_req_header("authorization", "bearer #{jwt}")
              |> get(todo_path(conn, :show, id))
-      assert json_response(conn, 200)["data"] == %{
-        "id" => id,
-        "description" => "some description",
-        "title" => "some title"}
+      response = json_response(conn, 200)["data"]
+      assert response["id"] == id
+      assert response["description"] == "some description"
+      assert response["title"] == "some title"
     end
 
     test "renders errors when not authenticated", %{conn: conn} do
@@ -55,7 +55,7 @@ defmodule Todos.TodoControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, jwt: jwt} do
       conn = conn
-             |> put_req_header("bearer", jwt)
+             |> put_req_header("authorization", "bearer #{jwt}")
              |> post(todo_path(conn, :create), todo: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -66,22 +66,22 @@ defmodule Todos.TodoControllerTest do
 
     test "renders todo when data is valid", %{conn: conn, todo: %Todo{id: id} = todo, jwt: jwt} do
       conn = conn
-             |> put_req_header("bearer", jwt)
+             |> put_req_header("authorization", "bearer #{jwt}")
              |> put(todo_path(conn, :update, todo), todo: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = build_conn()
-             |> put_req_header("bearer", jwt)
+             |> put_req_header("authorization", "bearer #{jwt}")
              |> get(todo_path(conn, :show, id))
-      assert json_response(conn, 200)["data"] == %{
-        "id" => id,
-        "description" => "some updated description",
-        "title" => "some updated title"}
+      response = json_response(conn, 200)["data"]
+      assert response["id"] == id
+      assert response["description"] == "some updated description"
+      assert response["title"] == "some updated title"
     end
 
     test "renders errors when data is invalid", %{conn: conn, todo: todo, jwt: jwt} do
       conn = conn
-             |> put_req_header("bearer", jwt)
+             |> put_req_header("authorization", "bearer #{jwt}")
              |> put(todo_path(conn, :update, todo), todo: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -92,12 +92,12 @@ defmodule Todos.TodoControllerTest do
 
     test "deletes chosen todo", %{conn: conn, todo: todo, jwt: jwt} do
       conn = conn
-             |> put_req_header("bearer", jwt)
+             |> put_req_header("authorization", "bearer #{jwt}")
              |> delete(todo_path(conn, :delete, todo))
       assert response(conn, 204)
       assert_error_sent 404, fn ->
         build_conn()
-        |> put_req_header("bearer", jwt)
+        |> put_req_header("authorization", "bearer #{jwt}")
         |> get(todo_path(conn, :show, todo))
       end
     end

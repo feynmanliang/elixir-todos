@@ -1,6 +1,8 @@
 defmodule Todos.UserControllerTest do
   use Todos.ConnCase
 
+  import Poison
+
   alias Todos.Accounts
   alias Todos.Accounts.User
 
@@ -17,23 +19,17 @@ defmodule Todos.UserControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    test "lists all users", %{conn: conn} do
-      conn = get conn, user_path(conn, :index)
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
-
   describe "create user" do
     test "renders user when data is valid", %{conn: conn} do
       conn = post conn, user_path(conn, :create), user: @create_attrs
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = post conn, user_path(conn, :login), email: @create_attrs.email, password: @create_attrs.password
-      jwt_token = response(conn, 200)
+      jwt_token =
+        Poison.decode!(response(conn, 200))["access_token"]
 
       conn = build_conn()
-             |> put_req_header("bearer", jwt_token)
+             |> put_req_header("authorization", "bearer #{jwt_token}")
              |> get(user_path(conn, :show, id))
       assert json_response(conn, 200)["data"] == %{
         "id" => id,
@@ -50,25 +46,32 @@ defmodule Todos.UserControllerTest do
   describe "update user" do
     setup [:create_user]
 
-    test "renders user when data is valid", %{conn: conn, user: %User{id: id} = user} do
-      conn = put conn, user_path(conn, :update, user), user: @update_attrs
+    test "renders user when data is valid", %{conn: conn, user: %User{id: id} = user, jwt: jwt} do
+      conn = conn
+             |> put_req_header("authorization", "bearer #{jwt}")
+             |> put(user_path(conn, :update, user), user: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get conn, user_path(conn, :show, id)
+      conn = build_conn()
+             |> put_req_header("authorization", "bearer #{jwt}")
+             |> get(user_path(conn, :show, id))
       assert json_response(conn, 200)["data"] == %{
         "id" => id,
         "email" => "some updated email",
         "name" => "some updated name"}
     end
 
-    test "renders errors when data is invalid", %{conn: conn, user: user} do
-      conn = put conn, user_path(conn, :update, user), user: @invalid_attrs
+    test "renders errors when data is invalid", %{conn: conn, user: user, jwt: jwt} do
+      conn = conn
+             |> put_req_header("authorization", "bearer #{jwt}")
+             |> put(user_path(conn, :update, user), user: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
   defp create_user(_) do
     user = fixture(:user)
-    {:ok, user: user}
+    {:ok, jwt, _} = Todos.Guardian.encode_and_sign(user)
+    {:ok, user: user, jwt: jwt}
   end
 end

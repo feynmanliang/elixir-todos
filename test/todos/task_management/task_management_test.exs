@@ -17,8 +17,7 @@ defmodule Todos.TaskManagementTest do
       user
     end
 
-    def todo_fixture(attrs \\ %{}) do
-      {:ok, owner} = Accounts.create_user(@user_attrs)
+    def todo_fixture(owner, attrs \\ %{}) do
       todo_attrs = attrs
         |> Map.put(:owner_id, owner.id)
         |> Enum.into(@valid_attrs)
@@ -27,12 +26,14 @@ defmodule Todos.TaskManagementTest do
     end
 
     test "list_todos/0 returns all todos" do
-      todo = todo_fixture()
-      assert TaskManagement.list_todos() == [todo]
+      user = user_fixture()
+      todo = todo_fixture(user)
+      assert TaskManagement.list_todos(user) == [todo]
     end
 
     test "get_todo!/1 returns the todo with given id" do
-      todo = todo_fixture()
+      user = user_fixture()
+      todo = todo_fixture(user)
       assert TaskManagement.get_todo!(todo.id) == todo
     end
 
@@ -49,7 +50,8 @@ defmodule Todos.TaskManagementTest do
     end
 
     test "update_todo/2 with valid data updates the todo" do
-      todo = todo_fixture()
+      user = user_fixture()
+      todo = todo_fixture(user)
       assert {:ok, todo} = TaskManagement.update_todo(todo, @update_attrs)
       assert %Todo{} = todo
       assert todo.description == "some updated description"
@@ -57,19 +59,22 @@ defmodule Todos.TaskManagementTest do
     end
 
     test "update_todo/2 with invalid data returns error changeset" do
-      todo = todo_fixture()
+      user = user_fixture()
+      todo = todo_fixture(user)
       assert {:error, %Ecto.Changeset{}} = TaskManagement.update_todo(todo, @invalid_attrs)
       assert todo == TaskManagement.get_todo!(todo.id)
     end
 
     test "delete_todo/1 deletes the todo" do
-      todo = todo_fixture()
+      user = user_fixture()
+      todo = todo_fixture(user)
       assert {:ok, %Todo{}} = TaskManagement.delete_todo(todo)
       assert_raise Ecto.NoResultsError, fn -> TaskManagement.get_todo!(todo.id) end
     end
 
     test "change_todo/1 returns a todo changeset" do
-      todo = todo_fixture()
+      user = user_fixture()
+      todo = todo_fixture(user)
       assert %Ecto.Changeset{} = TaskManagement.change_todo(todo)
     end
   end
