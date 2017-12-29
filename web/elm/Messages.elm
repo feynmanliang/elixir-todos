@@ -16,11 +16,10 @@ type LoginMsg
     | SetEmail String
     | SetPassword String
     | GetTokenCompleted (Result Http.Error String)
+    | DoLoad
+    | Load (Maybe AccessToken)
 
 
 type Msg
     = TodoListMsg TodoListMsg
     | LoginMsg LoginMsg
-    | Save String
-    | DoLoad
-    | Load (Maybe AccessToken)

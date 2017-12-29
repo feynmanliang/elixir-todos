@@ -4,7 +4,7 @@ import Date exposing (Date, fromString, toTime)
 import Http
 import Json.Encode as Encode
 import Json.Decode exposing (Decoder, string, map3, field, at, list, succeed, fail, andThen)
-import Messages exposing (TodoListMsg(..), LoginMsg(..))
+import Messages exposing (TodoListMsg(..), LoginMsg(..), Msg(..))
 import Models exposing (Todo, AccessToken, Login)
 
 

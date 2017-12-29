@@ -32,14 +32,16 @@ renderTodoList todoList =
 
 renderLogin : Login -> Html LoginMsg
 renderLogin model =
-    if model.loggedIn then
-        div [] [ button [ onClick ClickLogout ] [ text "Logout" ] ]
-    else
-        div []
-            [ input [ type_ "text", placeholder "Email", onInput SetEmail ] []
-            , input [ type_ "password", placeholder "Password", onInput SetPassword ] []
-            , button [ onClick ClickSubmit ] [ text "Submit" ]
-            ]
+    case model.accessToken of
+        Just _ ->
+            div [] [ button [ onClick ClickLogout ] [ text "Logout" ] ]
+
+        Nothing ->
+            div []
+                [ input [ type_ "text", placeholder "Email", onInput SetEmail ] []
+                , input [ type_ "password", placeholder "Password", onInput SetPassword ] []
+                , button [ onClick ClickSubmit ] [ text "Submit" ]
+                ]
 
 
 view : Model -> Html Msg

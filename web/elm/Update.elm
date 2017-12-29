@@ -37,35 +37,37 @@ updateTodoList msg maybeToken todoList =
 
 updateLogin : LoginMsg -> Login -> ( Login, Cmd LoginMsg )
 updateLogin msg model =
-    let
-        setLoggedIn : Login -> Bool -> Login
-        setLoggedIn model newLoggedIn =
-            { model | loggedIn = newLoggedIn }
+    case msg of
+        ClickSubmit ->
+            ( model, submitLoginCmd model )
 
-        issuedJwtCompleted : Login -> Result Http.Error String -> ( Login, Cmd LoginMsg )
-        issuedJwtCompleted model result =
+        ClickLogout ->
+            ( { model | accessToken = Nothing }, TokenStorage.remove () )
+
+        SetEmail email ->
+            ( { model | email = email }, Cmd.none )
+
+        SetPassword password ->
+            ( { model | password = password }, Cmd.none )
+
+        GetTokenCompleted result ->
             case result of
-                Ok _ ->
-                    ( setLoggedIn model True, Cmd.none )
-
-                Err error ->
+                Err _ ->
                     ( model, Cmd.none )
-    in
-        case msg of
-            ClickSubmit ->
-                ( model, submitLoginCmd model )
 
-            ClickLogout ->
-                ( setLoggedIn model False, Cmd.none )
+                Ok token ->
+                    ( { model | accessToken = Just token }, TokenStorage.save token )
 
-            SetEmail email ->
-                ( { model | email = email }, Cmd.none )
+        DoLoad ->
+            ( model, TokenStorage.doload () )
 
-            SetPassword password ->
-                ( { model | password = password }, Cmd.none )
+        Load maybeToken ->
+            case maybeToken of
+                Nothing ->
+                    ( model, Cmd.none )
 
-            GetTokenCompleted result ->
-                issuedJwtCompleted model result
+                Just token ->
+                    ( { model | accessToken = Just token }, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -74,7 +76,7 @@ update msg model =
         TodoListMsg todoMsg ->
             let
                 ( updatedModel, cmd ) =
-                    updateTodoList todoMsg model.accessToken model.todoList
+                    updateTodoList todoMsg model.login.accessToken model.todoList
             in
                 ( { model | todoList = updatedModel }, Cmd.map TodoListMsg cmd )
 
@@ -83,53 +85,4 @@ update msg model =
                 ( updatedModel, cmd ) =
                     updateLogin loginMsg model.login
             in
-                case loginMsg of
-                    GetTokenCompleted result ->
-                        case result of
-                            Ok token ->
-                                ( { model | accessToken = Just token, login = updatedModel }, Cmd.none )
-
-                            _ ->
-                                ( { model | login = updatedModel }, (Cmd.map LoginMsg cmd) )
-
-                    ClickLogout ->
-                        ( { model
-                            | accessToken = Nothing
-                            , login = updatedModel
-                          }
-                        , TokenStorage.remove ()
-                        )
-
-                    _ ->
-                        ( { model
-                            | login = updatedModel
-                            , accessToken = Nothing
-                          }
-                        , (Cmd.map LoginMsg cmd)
-                        )
-
-        Save token ->
-            ( { model | accessToken = Just token }, TokenStorage.save token )
-
-        DoLoad ->
-            ( model, TokenStorage.doload () )
-
-        Load maybeToken ->
-            let
-                oldLoginFormModel =
-                    model.login
-
-                newLoginFormModel =
-                    case maybeToken of
-                        Nothing ->
-                            oldLoginFormModel
-
-                        Just _ ->
-                            { oldLoginFormModel | loggedIn = True }
-            in
-                ( { model
-                    | accessToken = maybeToken
-                    , login = newLoginFormModel
-                  }
-                , Cmd.none
-                )
+                ( { model | login = updatedModel }, (Cmd.map LoginMsg cmd) )

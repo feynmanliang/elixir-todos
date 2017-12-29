@@ -10,7 +10,7 @@ type alias AccessToken =
 type alias Login =
     { email : String
     , password : String
-    , loggedIn : Bool
+    , accessToken : Maybe AccessToken
     }
 
 
@@ -24,7 +24,6 @@ type alias Todo =
 type alias Model =
     { todoList : List Todo
     , login : Login
-    , accessToken : Maybe AccessToken
     }
 
 
@@ -34,7 +33,6 @@ initialModel =
     , login =
         { email = ""
         , password = ""
-        , loggedIn = False
+        , accessToken = Nothing
         }
-    , accessToken = Nothing
     }
