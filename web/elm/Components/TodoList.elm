@@ -1,10 +1,11 @@
 module Components.TodoList exposing (..)
 
+import Debug
 import Html exposing (Html, text, ul, li, div, h2, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode exposing (Decoder, string, map4, field, at, list)
+import Json.Decode exposing (Decoder, string, map3, field, at, list)
 import Todo
 
 
@@ -17,17 +18,14 @@ todos =
     { todos =
         [ { title = "Todo 1"
           , description = "Description for todo 1"
-          , ownedBy = "owner for todo 1"
           , createdOn = "12/28/2017"
           }
         , { title = "Todo 2"
           , description = "Description for todo 2"
-          , ownedBy = "owner for todo 2"
           , createdOn = "12/28/2017"
           }
         , { title = "Todo 3"
           , description = "Description for todo 3"
-          , ownedBy = "owner for todo 3"
           , createdOn = "12/28/2017"
           }
         ]
@@ -83,12 +81,16 @@ fetchTodos token model =
 
 fetchCompleted : Model -> Result Http.Error (List Todo.Model) -> ( Model, Cmd Msg )
 fetchCompleted model result =
-    case result of
-        Ok newTodos ->
-            ( { model | todos = newTodos }, Cmd.none )
+    let
+        _ =
+            Debug.log "result" result
+    in
+        case result of
+            Ok newTodos ->
+                ( { model | todos = newTodos }, Cmd.none )
 
-        Err _ ->
-            ( model, Cmd.none )
+            Err _ ->
+                ( model, Cmd.none )
 
 
 decodeTodoFetch : Decoder (List Todo.Model)
@@ -96,13 +98,12 @@ decodeTodoFetch =
     let
         decodeTodoData : Decoder Todo.Model
         decodeTodoData =
-            map4 Todo.Model
+            map3 Todo.Model
                 (field "title" string)
                 (field "description" string)
-                (field "owner_id" string)
                 (field "created_at" string)
     in
-        list decodeTodoData
+        at [ "data" ] (list decodeTodoData)
 
 
 renderTodo : Todo.Model -> Html a
