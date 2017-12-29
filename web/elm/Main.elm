@@ -52,7 +52,7 @@ update msg model =
         TodoListMsg todoMsg ->
             let
                 ( updatedModel, cmd ) =
-                    TodoList.update todoMsg model.todoListModel
+                    TodoList.update todoMsg model.accessToken model.todoListModel
             in
                 ( { model | todoListModel = updatedModel }, Cmd.map TodoListMsg cmd )
 
@@ -71,7 +71,12 @@ update msg model =
                                 ( { model | loginFormModel = updatedModel }, (Cmd.map LoginFormMsg cmd) )
 
                     ClickLogout ->
-                        ( { model | loginFormModel = updatedModel }, remove () )
+                        ( { model
+                            | accessToken = Nothing
+                            , loginFormModel = updatedModel
+                          }
+                        , remove ()
+                        )
 
                     _ ->
                         ( { model

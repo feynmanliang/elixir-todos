@@ -1,6 +1,8 @@
 defmodule Todos.Router do
   use Todos.Web, :router
-  alias Todos.Guardian
+
+  import Todos.Guardian
+  import Guardian.Plug
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -15,7 +17,12 @@ defmodule Todos.Router do
   end
 
   pipeline :authenticated do
-    plug :ensure_jwt
+    plug Guardian.Plug.Pipeline,
+      module: Todos.Guardian,
+      error_handler: Todos.AuthErrorHandler
+    plug Guardian.Plug.VerifyHeader, claims: %{"typ" => "access"}
+    plug Guardian.Plug.EnsureAuthenticated
+    plug Guardian.Plug.LoadResource, allow_blank: false
   end
 
   scope "/", Todos do
@@ -35,19 +42,5 @@ defmodule Todos.Router do
 
     resources "/todos", TodoController, except: [:new, :edit]
     resources "/users", UserController, except: [:new, :create, :edit, :delete]
-  end
-
-  defp ensure_jwt(conn, _params) do
-    with {:ok, user, _claims} <- conn
-    |> get_req_header("bearer")
-    |> Enum.at(0)
-    |> Guardian.resource_from_token() do
-      assign(conn, :user, user)
-    else
-      _ ->
-        conn
-        |> send_resp(401, "Invalid credentials")
-        |> halt()
-    end
   end
 end

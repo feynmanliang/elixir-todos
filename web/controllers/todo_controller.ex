@@ -6,12 +6,12 @@ defmodule Todos.TodoController do
 
   action_fallback Todos.FallbackController
 
-  def index(conn, _params) do
-    todos = TaskManagement.list_todos()
+  def index(%{private: %{guardian_default_resource: user}} = conn, _params) do
+    todos = TaskManagement.list_todos(user)
     render(conn, "index.json", todos: todos)
   end
 
-  def create(%{assigns: %{user: user}} = conn, %{"todo" => todo_params}) do
+  def create(%{private: %{guardian_default_resource: user}} = conn, %{"todo" => todo_params}) do
     with {:ok, %Todo{} = todo} <- TaskManagement.create_todo(user, todo_params) do
       conn
       |> put_status(:created)

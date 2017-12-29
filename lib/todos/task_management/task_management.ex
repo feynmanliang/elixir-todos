@@ -14,12 +14,14 @@ defmodule Todos.TaskManagement do
 
   ## Examples
 
-      iex> list_todos()
+      iex> list_todos(user)
       [%Todo{}, ...]
 
   """
-  def list_todos do
-    Repo.all(Todo)
+  def list_todos(user) do
+    query = from t in Todo,
+      where: t.owner_id == ^user.id
+    Repo.all(query)
   end
 
   @doc """

@@ -4,7 +4,6 @@ import Html exposing (Html, text, ul, li, div, h2, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Http
-import Task
 import Json.Decode exposing (Decoder, string, map4, field, at, list)
 import Todo
 
@@ -46,23 +45,33 @@ initialModel =
     { todos = [] }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Msg -> Maybe String -> Model -> ( Model, Cmd Msg )
+update msg maybeToken model =
     case msg of
         NoOp ->
             ( model, Cmd.none )
 
         Fetch ->
-            ( model, fetchTodosCmd model )
+            case maybeToken of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just token ->
+                    ( model, fetchTodosCmd token model )
 
         FetchCompleted result ->
             fetchCompleted model result
 
 
-fetchTodos : Model -> Http.Request (List Todo.Model)
-fetchTodos model =
+fetchTodosCmd : String -> Model -> Cmd Msg
+fetchTodosCmd token model =
+    Http.send FetchCompleted (fetchTodos token model)
+
+
+fetchTodos : String -> Model -> Http.Request (List Todo.Model)
+fetchTodos token model =
     { method = "GET"
-    , headers = [ Http.header "Authorization" ("Bearer " ++ "TODO INJECT TOKEN") ]
+    , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
     , body = Http.emptyBody
     , url = "/api/todos"
     , expect = Http.expectJson decodeTodoFetch
@@ -70,11 +79,6 @@ fetchTodos model =
     , withCredentials = False
     }
         |> Http.request
-
-
-fetchTodosCmd : Model -> Cmd Msg
-fetchTodosCmd model =
-    Http.send FetchCompleted (fetchTodos model)
 
 
 fetchCompleted : Model -> Result Http.Error (List Todo.Model) -> ( Model, Cmd Msg )
@@ -115,7 +119,7 @@ view : Model -> Html Msg
 view model =
     div [ class "todo-list" ]
         [ h2 [] [ text "Todo List" ]
-        , button [ onClick Fetch, class "btn btn-primary" ] [ text "Fetch Articles" ]
+        , button [ onClick Fetch, class "btn btn-primary" ] [ text "Fetch Todos" ]
         , ul []
             (renderTodos model)
         ]
