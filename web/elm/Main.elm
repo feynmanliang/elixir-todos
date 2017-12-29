@@ -2,14 +2,19 @@ port module Main exposing (..)
 
 import Html exposing (text, Html, div)
 import Html.Attributes exposing (class)
-import Components.TodoList as TodoList
+import Todo exposing (Model)
+import Components.TodoList as TodoList exposing (Msg(..))
 import Components.LoginForm as LoginForm exposing (Msg(..))
 
 
+type alias AccessToken =
+    String
+
+
 type alias Model =
-    { todoListModel : TodoList.Model
+    { todoListModel : List Todo.Model
     , loginFormModel : LoginForm.Model
-    , accessToken : Maybe String
+    , accessToken : Maybe AccessToken
     }
 
 
@@ -18,13 +23,13 @@ type Msg
     | LoginFormMsg LoginForm.Msg
     | Save String
     | DoLoad
-    | Load (Maybe String)
+    | Load (Maybe AccessToken)
 
 
 port save : String -> Cmd msg
 
 
-port load : (Maybe String -> msg) -> Sub msg
+port load : (Maybe AccessToken -> msg) -> Sub msg
 
 
 port doload : () -> Cmd msg
@@ -113,7 +118,7 @@ update msg model =
                 )
 
 
-decodeFromLocalStorage : String -> Maybe String
+decodeFromLocalStorage : String -> Maybe AccessToken
 decodeFromLocalStorage s =
     Just s
 

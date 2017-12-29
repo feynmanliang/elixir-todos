@@ -9,65 +9,46 @@ import Json.Decode exposing (Decoder, string, map3, field, at, list)
 import Todo
 
 
-type alias Model =
-    { todos : List Todo.Model }
-
-
-todos : Model
-todos =
-    { todos =
-        [ { title = "Todo 1"
-          , description = "Description for todo 1"
-          , createdOn = "12/28/2017"
-          }
-        , { title = "Todo 2"
-          , description = "Description for todo 2"
-          , createdOn = "12/28/2017"
-          }
-        , { title = "Todo 3"
-          , description = "Description for todo 3"
-          , createdOn = "12/28/2017"
-          }
-        ]
-    }
-
-
 type Msg
     = NoOp
     | Fetch
     | FetchCompleted (Result Http.Error (List Todo.Model))
 
 
-initialModel : Model
+type alias AccessToken =
+    String
+
+
+initialModel : List Todo.Model
 initialModel =
-    { todos = [] }
+    []
 
 
-update : Msg -> Maybe String -> Model -> ( Model, Cmd Msg )
-update msg maybeToken model =
+update : Msg -> Maybe AccessToken -> List Todo.Model -> ( List Todo.Model, Cmd Msg )
+update msg maybeToken todoList =
     case msg of
         NoOp ->
-            ( model, Cmd.none )
+            ( todoList, Cmd.none )
 
         Fetch ->
             case maybeToken of
                 Nothing ->
-                    ( model, Cmd.none )
+                    ( todoList, Cmd.none )
 
                 Just token ->
-                    ( model, fetchTodosCmd token model )
+                    ( todoList, fetchTodosCmd token todoList )
 
         FetchCompleted result ->
-            fetchCompleted model result
+            fetchCompleted todoList result
 
 
-fetchTodosCmd : String -> Model -> Cmd Msg
-fetchTodosCmd token model =
-    Http.send FetchCompleted (fetchTodos token model)
+fetchTodosCmd : String -> List Todo.Model -> Cmd Msg
+fetchTodosCmd token todoList =
+    Http.send FetchCompleted (fetchTodos token todoList)
 
 
-fetchTodos : String -> Model -> Http.Request (List Todo.Model)
-fetchTodos token model =
+fetchTodos : String -> List Todo.Model -> Http.Request (List Todo.Model)
+fetchTodos token todoList =
     { method = "GET"
     , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
     , body = Http.emptyBody
@@ -79,18 +60,18 @@ fetchTodos token model =
         |> Http.request
 
 
-fetchCompleted : Model -> Result Http.Error (List Todo.Model) -> ( Model, Cmd Msg )
-fetchCompleted model result =
+fetchCompleted : List Todo.Model -> Result Http.Error (List Todo.Model) -> ( List Todo.Model, Cmd Msg )
+fetchCompleted todos result =
     let
         _ =
             Debug.log "result" result
     in
         case result of
             Ok newTodos ->
-                ( { model | todos = newTodos }, Cmd.none )
+                ( newTodos, Cmd.none )
 
             Err _ ->
-                ( model, Cmd.none )
+                ( todos, Cmd.none )
 
 
 decodeTodoFetch : Decoder (List Todo.Model)
@@ -111,16 +92,16 @@ renderTodo todo =
     li [] [ Todo.view todo ]
 
 
-renderTodos : Model -> List (Html a)
-renderTodos model =
-    List.map renderTodo model.todos
+renderTodos : List Todo.Model -> List (Html a)
+renderTodos todoList =
+    List.map renderTodo todoList
 
 
-view : Model -> Html Msg
-view model =
+view : List Todo.Model -> Html Msg
+view todoList =
     div [ class "todo-list" ]
         [ h2 [] [ text "Todo List" ]
         , button [ onClick Fetch, class "btn btn-primary" ] [ text "Fetch Todos" ]
         , ul []
-            (renderTodos model)
+            (renderTodos todoList)
         ]
