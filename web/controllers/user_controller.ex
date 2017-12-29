@@ -38,6 +38,10 @@ defmodule Todos.UserController do
     with {:ok, user} <- Accounts.login(conn.body_params),
          {:ok, token, _} <- Guardian.encode_and_sign(user) do
            render(conn, "access_token.json", token: token)
+    else
+      {:error, err} -> conn
+      |> send_resp(401, "Invalid credentials")
+      |> halt()
     end
   end
 end

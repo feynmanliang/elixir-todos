@@ -1,6 +1,5 @@
 module Components.LoginForm exposing (..)
 
-import Debug exposing (..)
 import Html exposing (Html, text, div, input, button)
 import Html.Attributes exposing (type_, placeholder)
 import Html.Events exposing (onInput, onClick)
@@ -12,7 +11,7 @@ import Json.Encode as Encode
 type alias Model =
     { email : String
     , password : String
-    , jwt : String
+    , loggedIn : Bool
     }
 
 
@@ -28,7 +27,7 @@ initialModel : Model
 initialModel =
     { email = ""
     , password = ""
-    , jwt = ""
+    , loggedIn = False
     }
 
 
@@ -57,11 +56,16 @@ submitLogin model =
 issuedJwtCompleted : Model -> Result Http.Error String -> ( Model, Cmd Msg )
 issuedJwtCompleted model result =
     case result of
-        Ok token ->
-            ( { model | jwt = token }, Cmd.none )
+        Ok _ ->
+            ( setLoggedIn model True, Cmd.none )
 
         Err error ->
             ( model, Cmd.none )
+
+
+setLoggedIn : Model -> Bool -> Model
+setLoggedIn model newLoggedIn =
+    { model | loggedIn = newLoggedIn }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -71,7 +75,7 @@ update msg model =
             ( model, submitLogin model )
 
         ClickLogout ->
-            ( { model | jwt = "" }, Cmd.none )
+            ( setLoggedIn model False, Cmd.none )
 
         SetEmail email ->
             ( { model | email = email }, Cmd.none )
@@ -85,19 +89,11 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    let
-        loggedIn : Bool
-        loggedIn =
-            if String.length model.jwt > 0 then
-                True
-            else
-                False
-    in
-        if loggedIn then
-            div [] [ button [ onClick ClickLogout ] [ text "Logout" ] ]
-        else
-            div []
-                [ input [ type_ "text", placeholder "Email", onInput SetEmail ] []
-                , input [ type_ "password", placeholder "Password", onInput SetPassword ] []
-                , button [ onClick ClickSubmit ] [ text "Submit" ]
-                ]
+    if model.loggedIn then
+        div [] [ button [ onClick ClickLogout ] [ text "Logout" ] ]
+    else
+        div []
+            [ input [ type_ "text", placeholder "Email", onInput SetEmail ] []
+            , input [ type_ "password", placeholder "Password", onInput SetPassword ] []
+            , button [ onClick ClickSubmit ] [ text "Submit" ]
+            ]

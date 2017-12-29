@@ -15,20 +15,22 @@ import 'phoenix_html';
 import Elm from './main';
 
 
-
 // Render Elm application
 const elmDiv = document.querySelector('#elm-target');
 if (elmDiv) {
-  // Load localStorage into Elm
-  const storedState = localStorage.getItem('model');
-  const startingState = storedState ? JSON.parse(storedState) : null;
-  const elmApp = Elm.Main.embed(elmDiv, startingState);
+  // Store JWT access token in local storage to persist across sessions
+  const storageKey = 'accessToken';
 
-  elmApp.ports.setStorage.subscribe((state) => {
-    localStorage.setItem('model', JSON.stringify(state));
+  const elmApp = Elm.Main.embed(elmDiv);
+
+  elmApp.ports.save.subscribe((value) => {
+    localStorage.setItem(storageKey, value);
   });
-  elmApp.ports.removeStorage.subscribe(() => {
-    localStorage.removeItem('model');
+  elmApp.ports.doload.subscribe(() => {
+    elmApp.ports.load.send(localStorage.getItem(storageKey));
+  });
+  elmApp.ports.remove.subscribe(() => {
+    localStorage.removeItem(storageKey);
   });
 }
 
