@@ -5,8 +5,7 @@ import Models exposing (AccessToken, Todo)
 
 
 type TodoListMsg
-    = NoOp
-    | FetchCompleted (Result Http.Error (List Todo))
+    = FetchCompleted (Result Http.Error (List Todo))
     | TodoCreated (Result Http.Error Todo)
 
 

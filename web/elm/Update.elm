@@ -20,9 +20,6 @@ import TokenStorage
 updateTodoList : TodoListMsg -> Maybe AccessToken -> List Todo -> ( List Todo, Cmd TodoListMsg )
 updateTodoList msg maybeToken todoList =
     case msg of
-        NoOp ->
-            ( todoList, Cmd.none )
-
         FetchCompleted result ->
             case result of
                 Ok newTodos ->
@@ -113,7 +110,12 @@ update msg model =
                 ( updatedModel, cmd ) =
                     updateLogin loginMsg model.login
             in
-                ( { model | login = updatedModel }, cmd )
+                case loginMsg of
+                    ClickLogout ->
+                        ( { model | login = updatedModel, todoList = [] }, cmd )
+
+                    _ ->
+                        ( { model | login = updatedModel }, cmd )
 
         AddTodoMsg addTodoMsg ->
             let
