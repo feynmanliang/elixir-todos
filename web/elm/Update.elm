@@ -1,38 +1,51 @@
 module Update exposing (..)
 
-import Http exposing (Error)
-import Commands exposing (fetchTodosCmd, submitLoginCmd)
-import Messages exposing (TodoListMsg(..), LoginMsg(..), Msg(..))
-import Models exposing (Todo, AccessToken, Login, Model)
+import Commands
+    exposing
+        ( fetchTodosCmd
+        , submitLoginCmd
+        , createTodoCmd
+        )
+import Messages
+    exposing
+        ( TodoListMsg(..)
+        , LoginMsg(..)
+        , AddTodoMsg(..)
+        , Msg(..)
+        )
+import Models exposing (Todo, AccessToken, Login, AddTodo, Model)
 import TokenStorage
 
 
 updateTodoList : TodoListMsg -> Maybe AccessToken -> List Todo -> ( List Todo, Cmd TodoListMsg )
 updateTodoList msg maybeToken todoList =
-    let
-        fetchCompleted : List Todo -> Result Http.Error (List Todo) -> ( List Todo, Cmd TodoListMsg )
-        fetchCompleted todos result =
+    case msg of
+        NoOp ->
+            ( todoList, Cmd.none )
+
+        Fetch ->
+            case maybeToken of
+                Nothing ->
+                    ( todoList, Cmd.none )
+
+                Just token ->
+                    ( todoList, fetchTodosCmd token todoList )
+
+        FetchCompleted result ->
             case result of
                 Ok newTodos ->
                     ( newTodos, Cmd.none )
 
                 Err _ ->
-                    ( todos, Cmd.none )
-    in
-        case msg of
-            NoOp ->
-                ( todoList, Cmd.none )
+                    ( todoList, Cmd.none )
 
-            Fetch ->
-                case maybeToken of
-                    Nothing ->
-                        ( todoList, Cmd.none )
+        TodoCreated result ->
+            case result of
+                Ok newTodo ->
+                    ( newTodo :: todoList, Cmd.none )
 
-                    Just token ->
-                        ( todoList, fetchTodosCmd token todoList )
-
-            FetchCompleted result ->
-                fetchCompleted todoList result
+                Err _ ->
+                    ( todoList, Cmd.none )
 
 
 updateLogin : LoginMsg -> Login -> ( Login, Cmd LoginMsg )
@@ -70,6 +83,24 @@ updateLogin msg model =
                     ( { model | accessToken = Just token }, Cmd.none )
 
 
+updateAddTodo : Maybe AccessToken -> AddTodoMsg -> AddTodo -> ( AddTodo, Cmd Msg )
+updateAddTodo maybeToken msg addTodo =
+    case msg of
+        SetTitle title ->
+            ( { addTodo | title = title }, Cmd.none )
+
+        SetDescription description ->
+            ( { addTodo | description = description }, Cmd.none )
+
+        ClickSubmitTodo ->
+            case maybeToken of
+                Nothing ->
+                    ( addTodo, Cmd.none )
+
+                Just token ->
+                    ( { addTodo | title = "", description = "" }, Cmd.map TodoListMsg (createTodoCmd token addTodo) )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -86,3 +117,10 @@ update msg model =
                     updateLogin loginMsg model.login
             in
                 ( { model | login = updatedModel }, (Cmd.map LoginMsg cmd) )
+
+        AddTodoMsg addTodoMsg ->
+            let
+                ( updatedModel, cmd ) =
+                    updateAddTodo model.login.accessToken addTodoMsg model.addTodo
+            in
+                ( { model | addTodo = updatedModel }, cmd )

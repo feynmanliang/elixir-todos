@@ -21,15 +21,26 @@ type alias Todo =
     }
 
 
+type alias AddTodo =
+    { title : String
+    , description : String
+    }
+
+
 type alias Model =
     { todoList : List Todo
     , login : Login
+    , addTodo : AddTodo
     }
 
 
 initialModel : Model
 initialModel =
     { todoList = []
+    , addTodo =
+        { title = ""
+        , description = ""
+        }
     , login =
         { email = ""
         , password = ""

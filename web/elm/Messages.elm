@@ -8,6 +8,7 @@ type TodoListMsg
     = NoOp
     | Fetch
     | FetchCompleted (Result Http.Error (List Todo))
+    | TodoCreated (Result Http.Error Todo)
 
 
 type LoginMsg
@@ -20,6 +21,13 @@ type LoginMsg
     | Load (Maybe AccessToken)
 
 
+type AddTodoMsg
+    = SetTitle String
+    | SetDescription String
+    | ClickSubmitTodo
+
+
 type Msg
     = TodoListMsg TodoListMsg
     | LoginMsg LoginMsg
+    | AddTodoMsg AddTodoMsg

@@ -1,11 +1,11 @@
 module View exposing (..)
 
 import Date exposing (toTime)
-import Html exposing (Html, span, strong, em, a, text, li, div, h2, button, ul, input)
-import Html.Attributes exposing (class, type_, placeholder)
+import Html exposing (Html, span, strong, em, a, text, li, div, h2, button, ul, input, form)
+import Html.Attributes exposing (class, type_, placeholder, name, value)
 import Html.Events exposing (onClick, onInput)
-import Messages exposing (TodoListMsg(..), LoginMsg(..), Msg(..))
-import Models exposing (Todo, Login, Model)
+import Messages exposing (TodoListMsg(..), LoginMsg(..), AddTodoMsg(..), Msg(..))
+import Models exposing (Todo, Login, Model, AddTodo)
 
 
 renderTodoList : List Todo -> Html TodoListMsg
@@ -30,6 +30,20 @@ renderTodoList todoList =
             ]
 
 
+viewAddTodo : Login -> AddTodo -> Html AddTodoMsg
+viewAddTodo login addTodo =
+    case login.accessToken of
+        Nothing ->
+            div [] []
+
+        Just _ ->
+            div []
+                [ input [ type_ "text", placeholder "Title", onInput SetTitle ] []
+                , input [ type_ "text", placeholder "Description", onInput SetDescription ] []
+                , button [ onClick ClickSubmitTodo ] [ text "Submit" ]
+                ]
+
+
 renderLogin : Login -> Html LoginMsg
 renderLogin model =
     case model.accessToken of
@@ -48,5 +62,6 @@ view : Model -> Html Msg
 view model =
     div [ class "elm-app" ]
         [ Html.map TodoListMsg (renderTodoList model.todoList)
+        , Html.map AddTodoMsg (viewAddTodo model.login model.addTodo)
         , Html.map LoginMsg (renderLogin model.login)
         ]
